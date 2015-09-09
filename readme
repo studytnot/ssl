@@ -1,0 +1,5 @@
+boringssl clone from git clone https://boringssl.googlesource.com/boringssl
+@20150909 by lancelotluo
+
+libressl downloaded from  http://ftp.openbsd.org/pub/OpenBSD/LibreSSL/, version 2.2.3
+@20150909
