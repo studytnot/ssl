@@ -15,14 +15,15 @@ int main(int argc, char** argv) {
     unsigned char* encrypt_string;
     unsigned char* decrypt_string;
     int i;
-    ENGINE *eng = ENGINE_new();
-    if (NULL != eng) {
-        printf("fail to create ENGINE\n");
-    }
     // check usage
     if (argc != 2) {
         fprintf(stderr, "%s <plain text>\n", argv[0]);
         exit(-1);
+    }
+
+    ENGINE *eng = ENGINE_new();
+    if (NULL != eng) {
+        printf("fail to create ENGINE\n");
     }
 
     // set the input string
