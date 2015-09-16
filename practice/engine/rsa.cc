@@ -10,6 +10,12 @@
 #include <openssl/rsa.h>
 #include <openssl/engine.h>
 
+static int my_mod_exp(BIGNUM *r0, const BIGNUM *I, RSA *rsa, BN_CTX *ctx) {
+    printf("my mod_exp\n");
+    return 1;
+
+}
+
 int main(int argc, char** argv) {
     unsigned char* input_string;
     unsigned char* encrypt_string;
@@ -41,6 +47,10 @@ int main(int argc, char** argv) {
         printf("fail to alloc for rsa\n");
         exit(-1);
     }
+
+    ENGINE_set_RSA_method(eng, rsa->meth, sizeof(RSA_METHOD));
+    //eng->rsa_method->mod_exp = my_mod_exp;
+    eng->rsa_method  = NULL;
 
     BIGNUM  *bn_e = BN_new();
     int     bits  = 1024;

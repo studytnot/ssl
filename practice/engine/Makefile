@@ -1,4 +1,4 @@
-CC=g++
+CC=gcc
 CFLAGS=-Wall -g -O2
 LDFLAGS=../../boringssl/build/crypto/
 INCFLAGS=-I../../boringssl/include
