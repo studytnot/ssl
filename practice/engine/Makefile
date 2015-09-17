@@ -1,5 +1,6 @@
 CC=gcc
-CFLAGS=-Wall -g -O2
+#CFLAGS=-Wall -g -O2
+CFLAGS= -g -O0
 LDFLAGS=../../boringssl/build/crypto/
 INCFLAGS=-I../../boringssl/include
 #LIBS=-lcrypto
