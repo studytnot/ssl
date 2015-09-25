@@ -1,87 +1,188 @@
+/**
+ * rsacrypt.c
+ *  RSA Encrypt/Decrypt & Sign/Verify Test Program for OpenSSL
+ *  wrtten by blanclux
+ *  This software is distributed on an "AS IS" basis WITHOUT WARRANTY OF ANY KIND.
+ */
 #include <stdio.h>
-#include<string.h>
-#include <openssl/bio.h>
+#include <string.h>
 #include <openssl/rsa.h>
+#include <openssl/sha.h>
+#include <openssl/objects.h>
 #include <openssl/pem.h>
 #include <openssl/err.h>
-#define MSG_LEN (128+1)
 
-void print_hex(char* buff)
+#define KEYBIT_LEN  1024
+
+static void
+printHex(const char *title, const unsigned char *s, int len)
 {
-    int i = 0;
-    for (i=0;buff[i];i++)
-        printf("%02x",(unsigned char)buff[i]);
+    int     n;
+    printf("%s:", title);
+    for (n = 0; n < len; ++n) {
+        if ((n % 16) == 0) {
+            printf("\n%04x", n);
+        }
+        printf(" %02x", s[n]);
+    }
     printf("\n");
 }
-int rsa_verify(char *in, char *key_path, char* in2, int len)
-{
-    RSA *p_rsa;
-    FILE *file;
-    if((file=fopen(key_path,"r"))==NULL)
-    {
-        perror("open key file error");
-        return 0;
-    }
-    //if((p_rsa=PEM_read_RSA_PUBKEY(file,NULL,&ccbb,NULL))==NULL){
-    if((p_rsa=PEM_read_RSAPublicKey(file,NULL,NULL,NULL))==NULL)
-    {
-        ERR_print_errors_fp(stdout);
-        return 0;
-    }
-    if(!RSA_verify(NID_md5,(unsigned char*)in,strlen(in),(unsigned char*)in2,len,p_rsa))
-    {
-        return 0;
-    }
-    RSA_free(p_rsa);
-    fclose(file);
-    return 1;
-}
-int rsa_sign(char *in, char *key_path, char* out, int* plen)
-{
-    RSA *p_rsa;
-    FILE *file;
-    if((file=fopen(key_path,"r"))==NULL)
-    {
-        perror("open key file error");
-        return 0;
-    }
-    if((p_rsa=PEM_read_RSAPrivateKey(file,NULL,NULL,NULL))==NULL)
-    {
-        ERR_print_errors_fp(stdout);
-        return 0;
-    }
-    if(!RSA_sign(NID_md5,(unsigned char*)in,strlen(in),(unsigned char*)out,(unsigned int*)plen,p_rsa))
-    {
-        return 0;
-    }
-    RSA_free(p_rsa);
-    fclose(file);
-    return 1;
-}
-int main(int argc,char**argv)
-{
-    char text[MSG_LEN];
-    char sign[MSG_LEN];
-    int len=0;
 
-    memset((char*)text, 0 ,MSG_LEN);
-    memset((char*)sign, 0 ,MSG_LEN);
+int
+doCrypt(RSA *prikey, RSA *pubkey, unsigned char *data, int dataLen)
+{
+    int     i;
+    int     encryptLen, decryptLen;
+    unsigned char encrypt[1024], decrypt[1024];
 
-    strcpy((char*)text, "123456789 123456789 123456789 12a");
-    char pubkey[]="public_rsa2048.pem";
-    char prikey[]="private_rsa2048.pem";
-    if(!rsa_sign(text,prikey,sign,&len))
-    {
-        printf("sign error\n");
-        return -1;
+    /* encrypt */
+    encryptLen = RSA_public_encrypt(dataLen, data, encrypt, pubkey,
+                                    RSA_PKCS1_OAEP_PADDING);
+    /* print data */
+    printHex("ENCRYPT", encrypt, encryptLen);
+    printf("Encrypt length = %d\n", encryptLen);
+
+    /* decrypt */
+    decryptLen = RSA_private_decrypt(encryptLen, encrypt, decrypt, prikey,
+                                     RSA_PKCS1_OAEP_PADDING);
+    printHex("DECRYPT", decrypt, decryptLen);
+    if (dataLen != decryptLen) {
+        return 1;
     }
-    printf("sign %d:",strlen((char*)sign));
-    print_hex(sign);
-    if(!rsa_verify(text,pubkey,sign,len))
-    {
-        printf("verify error\n");
-        return -1;
+    for (i = 0; i < decryptLen; i++) {
+        if (data[i] != decrypt[i]) {
+            return 1;
+        }
     }
-    printf("verify ok\n");
+
+    return 0;
+}
+
+int
+doSign(RSA *prikey, RSA *pubkey, unsigned char *data, int dataLen)
+{
+    unsigned char hash[SHA256_DIGEST_LENGTH];
+    unsigned char sign[256];
+    unsigned int signLen;
+    int     ret;
+
+    SHA256(data, dataLen, hash);
+
+    /* Sign */
+    struct timeval tv_s, tv_e;
+    gettimeofday(&tv_s, NULL);
+    unsigned sign_num = 100000;
+    int i = 0;
+
+    while( i < sign_num ) {
+        ret = RSA_sign(NID_sha256, hash, SHA256_DIGEST_LENGTH, sign,
+                       &signLen, prikey);
+        //printHex("SIGN", sign, signLen);
+        //printf("Signature length = %d\n", signLen);
+        //printf("RSA_sign: %s\n", (ret == 1) ? "OK" : "NG");
+
+        /* Verify */
+        ret = RSA_verify(NID_sha256, hash, SHA256_DIGEST_LENGTH, sign,
+                         signLen, pubkey);
+        //printf("RSA_Verify: %s\n", (ret == 1) ? "true" : "false");
+        i++;
+    }
+
+    gettimeofday(&tv_e, NULL);
+    long elapsed = (tv_e.tv_sec - tv_s.tv_sec)*1000000 + tv_e.tv_usec - tv_s.tv_usec;
+    printf("elapsed time of %d times rsa signing:%ld\n", sign_num, elapsed);
+
+    return ret;
+}
+
+int
+main(int argc, char *argv[])
+{
+    int     ret;
+    char   *text = "The quick brown fox jumps over the lazy dog";
+    RSA    *prikey, *pubkey;
+    unsigned char *data;
+    unsigned int dataLen;
+    char   *p, *q, *n, *e, *d;
+    char    errbuf[1024];
+    FILE   *priKeyFile;
+
+    if (argc > 2) {
+        fprintf(stderr, "%s plainText\n", argv[0]);
+        return 1;
+    }
+    if (argc == 1) {
+        data = (unsigned char *) text;
+        dataLen = strlen(text);
+    } else {
+        data = (unsigned char *) argv[1];
+        dataLen = strlen(argv[1]);
+    }
+
+    ERR_load_crypto_strings();
+
+    /* generate private key & public key */
+    printf("< RSA Key Generation >\n");
+    prikey = RSA_generate_key(KEYBIT_LEN, RSA_F4, NULL, NULL);
+    if (prikey == NULL) {
+        printf("RSA_generate_key: err = %s\n",
+               ERR_error_string(ERR_get_error(), errbuf));
+        return 1;
+    }
+    priKeyFile = fopen("RSAPriKey.pem", "w");
+    if (priKeyFile == NULL) {
+        perror("failed to fopen");
+        return 1;
+    }
+    p = BN_bn2hex(prikey->p);
+    q = BN_bn2hex(prikey->q);
+    n = BN_bn2hex(prikey->n);
+    e = BN_bn2hex(prikey->e);
+    d = BN_bn2hex(prikey->d);
+    printf("p = 0x%s\n", p);
+    printf("q = 0x%s\n", q);
+    printf("n = 0x%s\n", n);
+    printf("e = 0x%s\n", e);
+    printf("d = 0x%s\n", d);
+
+    /* write private key to file (PEM format) */
+    if (PEM_write_RSAPrivateKey(priKeyFile, prikey, NULL, NULL, 0,
+                                NULL, NULL) != 1) {
+        printf("PEM_write_RSAPrivateKey: err = %s\n",
+               ERR_error_string(ERR_get_error(), errbuf));
+        return 1;
+    }
+
+    /* copy public keys */
+    pubkey = RSA_new();
+    BN_hex2bn(&(pubkey->e), e);
+    BN_hex2bn(&(pubkey->n), n);
+
+    /* encrypt & decrypt */
+    printf("\n< RSA Encrypt/Decrypt >\n");
+    printHex("PLAIN", data, dataLen);
+
+    ret = doCrypt(prikey, pubkey, data, dataLen);
+    if (ret != 0) {
+        printf("Encrypt/Decrypt Error.\n");
+        return ret;
+    }
+
+    printf("\n< RSA Sign/verify >\n");
+    ret = doSign(prikey, pubkey, data, dataLen);
+    if (ret != 1) {
+        printf("Sign/Verify Error.\n");
+        return ret;
+    }
+
+    RSA_free(prikey);
+    RSA_free(pubkey);
+    OPENSSL_free(p);
+    OPENSSL_free(q);
+    OPENSSL_free(n);
+    OPENSSL_free(e);
+    OPENSSL_free(d);
+    fclose(priKeyFile);
+
     return 0;
 }
