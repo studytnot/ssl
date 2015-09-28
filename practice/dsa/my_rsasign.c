@@ -123,9 +123,19 @@ static int do_sign_and_verify(RSA *pri_key, RSA *pub_key, const unsigned char *p
 // sign input_file with private key , saved in key_file, then save the signature to output_file
 static int my_rsa_sign(const char *key_file, const char *input_file, const char *output_file)
 {
-    RSA *pri_key = NULL:
-    BIO *b = NULL, in_bio = NULL, out_bio = NULL;
+    RSA *pri_key = NULL;
+    BIO *b = NULL, *in_bio = NULL, *out_bio = NULL;
+
+    int sign_len = 0;
+    unsigned char sign_txt[256];
+    unsigned char hash_txt[SHA256_DIGEST_LENGTH];
+    char err_buf[256];
+
     b = BIO_new_file(key_file, "r");
+    if (NULL == b) {
+        printf("fail to create file:%s\n", key_file);
+        return -1;
+    }
 
     pri_key = PEM_read_bio_RSAPrivateKey(b, NULL, NULL, NULL);
     if (pri_key == NULL) {
@@ -135,14 +145,25 @@ static int my_rsa_sign(const char *key_file, const char *input_file, const char 
 
     in_bio = BIO_new_file(input_file, "r");
     if (NULL == in_bio) {
-         printf("fail to create new file:%s\n", input_file):
+         printf("fail to create new file:%s\n", input_file);
     }
+    char buf[4096] = {0};
+    BIO_read(in_bio, buf, 4096);
+
+    printf("read buf:%s\n", buf);
 
     out_bio = BIO_new_file(output_file, "w+");
     if (NULL == out_bio) {
-         printf("fail to create new file:%s\n", input_file):
+         printf("fail to create new file:%s\n", input_file);
     }
 
+    SHA256(buf, strlen(buf), hash_txt);
+
+    int ret = RSA_sign(NID_sha256, hash_txt, SHA256_DIGEST_LENGTH, sign_txt, &sign_len, pri_key);
+    if (ret != 1) {
+         printf("fail to sign, err:%s\n",
+                ERR_error_string(ERR_get_error(), err_buf));
+    }
 
     return 0;
 }
