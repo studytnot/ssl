@@ -3,7 +3,7 @@
 #include <netinet/in.h>
 #include <netdb.h>
 #include <arpa/inet.h>
-
+#include <string.h>
 #include <openssl/rsa.h>
 #include <openssl/bn.h>
 
@@ -14,6 +14,7 @@ int main()
     int ret = -1;
     RSA *k  = NULL;
     BIGNUM *bne = BN_new();
+    char buf[4096];
     if (bne == NULL) {
         printf("fail to create bn\n");
         return -1;
@@ -32,6 +33,12 @@ int main()
         return -1;
     }
 
+    unsigned char *plain_txt = "hello lancelot";
+    unsigned char encrypt_txt[1024];
+    int en_len = RSA_public_encrypt(strlen(plain_txt), plain_txt, encrypt_txt, k, RSA_PKCS1_OAEP_PADDING);
+    printf("encrypt len:%d\n", en_len);
+    print_hex(encrypt_txt, en_len);
+
     unsigned char *key_buf = NULL;
     printf("key buf addr:%p\n", key_buf);
     int key_len  =  i2d_RSAPrivateKey(k, &key_buf);
@@ -39,6 +46,10 @@ int main()
 
 
     printf("key_len:%d private key:%s\n", key_len, key_buf);
+    sprintf(buf, "%d", key_len);
+    memcpy(&buf[sizeof(int)], key_buf, key_len);
+    memcpy(&buf[sizeof(int) + key_len], encrypt_txt, en_len);
+    int len = sizeof(int) + key_len + en_len;
 
     int sock_fd = 0, n = 0;
     struct sockaddr_in serv_addr;
@@ -62,7 +73,7 @@ int main()
 
     print_hex(key_buf, key_len);
 
-    n = write(sock_fd, key_buf, key_len);
+    n = write(sock_fd, buf, len);
     printf("suc to send:%d bytes\n", n);
 
     return 0;

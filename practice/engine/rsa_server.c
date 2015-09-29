@@ -44,6 +44,9 @@ int main()
     }
 
     printf("suc to read:%d bytes\n", sum);
+    int k_len = 0;
+    sscanf(recv_buf, "%d", &k_len);
+    printf("suc to read len:%d bytes\n", k_len);
 
     const unsigned char *p = recv_buf;
     int keylen;
