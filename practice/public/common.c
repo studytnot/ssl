@@ -1,6 +1,7 @@
 #include <stdio.h>
+#include "common.h"
 
-static void print_hex(const char *src, int len)
+void print_hex(const char *src, int len)
 {
     int i = 0;
     while (i < len) {
