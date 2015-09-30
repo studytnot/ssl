@@ -38,7 +38,7 @@ static size_t size(const RSA *rsa) {
   return BN_num_bytes(rsa->n);
 }
 
-static int encrypt(RSA *rsa, size_t *out_len, uint8_t *out, size_t max_out,
+static int my_encrypt(RSA *rsa, size_t *out_len, uint8_t *out, size_t max_out,
                    const uint8_t *in, size_t in_len, int padding) {
   const unsigned rsa_size = RSA_size(rsa);
   BIGNUM *f, *result;
@@ -126,6 +126,7 @@ static int encrypt(RSA *rsa, size_t *out_len, uint8_t *out, size_t max_out,
                              rsa->_method_mod_n)) {
     goto err;
   }
+  printf("after my bn_mod_exp\n");
 
   /* put in leading 0 bytes if the number is less than the length of the
    * modulus */
@@ -157,7 +158,7 @@ static int my_decrypt(RSA *rsa, size_t *out_len, uint8_t *out, size_t max_out,
   uint8_t *buf = NULL;
   int ret = 0;
 
-  printf("my decrypt\n");
+  printf("my decrypt, file:%s line:%d \n", __FILE__, __LINE__);
 
   if (max_out < rsa_size) {
     OPENSSL_PUT_ERROR(RSA, RSA_R_OUTPUT_BUFFER_TOO_SMALL);
@@ -180,9 +181,11 @@ static int my_decrypt(RSA *rsa, size_t *out_len, uint8_t *out, size_t max_out,
     goto err;
   }
 
+  printf("my decrypt, file:%s line:%d \n", __FILE__, __LINE__);
   if (!RSA_private_transform(rsa, buf, in, rsa_size)) {
     goto err;
   }
+  printf("my decrypt, file:%s line:%d \n", __FILE__, __LINE__);
 
   switch (padding) {
     case RSA_PKCS1_PADDING:
@@ -200,6 +203,7 @@ static int my_decrypt(RSA *rsa, size_t *out_len, uint8_t *out, size_t max_out,
       OPENSSL_PUT_ERROR(RSA, RSA_R_UNKNOWN_PADDING_TYPE);
       goto err;
   }
+  printf("my decrypt, file:%s line:%d \n", __FILE__, __LINE__);
 
   if (r < 0) {
     OPENSSL_PUT_ERROR(RSA, RSA_R_PADDING_CHECK_FAILED);
@@ -214,6 +218,202 @@ err:
     OPENSSL_free(buf);
   }
 
+  return ret;
+}
+
+static int mod_exp(BIGNUM *r0, const BIGNUM *I, RSA *rsa, BN_CTX *ctx) {
+  BIGNUM *r1, *m1, *vrfy;
+  BIGNUM local_dmp1, local_dmq1, local_c, local_r1;
+  BIGNUM *dmp1, *dmq1, *c, *pr1;
+  int ret = 0;
+  size_t i, num_additional_primes = 0;
+
+  if (rsa->additional_primes != NULL) {
+    num_additional_primes = sk_RSA_additional_prime_num(rsa->additional_primes);
+  }
+
+  BN_CTX_start(ctx);
+  r1 = BN_CTX_get(ctx);
+  m1 = BN_CTX_get(ctx);
+  vrfy = BN_CTX_get(ctx);
+
+  {
+    BIGNUM local_p, local_q;
+    BIGNUM *p = NULL, *q = NULL;
+
+    /* Make sure BN_mod_inverse in Montgomery intialization uses the
+     * BN_FLG_CONSTTIME flag (unless RSA_FLAG_NO_CONSTTIME is set) */
+    BN_init(&local_p);
+    p = &local_p;
+    BN_with_flags(p, rsa->p, BN_FLG_CONSTTIME);
+
+    BN_init(&local_q);
+    q = &local_q;
+    BN_with_flags(q, rsa->q, BN_FLG_CONSTTIME);
+
+    if (rsa->flags & RSA_FLAG_CACHE_PRIVATE) {
+      if (BN_MONT_CTX_set_locked(&rsa->_method_mod_p, &rsa->lock, p, ctx) ==
+          NULL) {
+        goto err;
+      }
+      if (BN_MONT_CTX_set_locked(&rsa->_method_mod_q, &rsa->lock, q, ctx) ==
+          NULL) {
+        goto err;
+      }
+    }
+  }
+
+  if (rsa->flags & RSA_FLAG_CACHE_PUBLIC) {
+    if (BN_MONT_CTX_set_locked(&rsa->_method_mod_n, &rsa->lock, rsa->n, ctx) ==
+        NULL) {
+      goto err;
+    }
+  }
+
+  /* compute I mod q */
+  c = &local_c;
+  BN_with_flags(c, I, BN_FLG_CONSTTIME);
+  if (!BN_mod(r1, c, rsa->q, ctx)) {
+    goto err;
+  }
+
+  /* compute r1^dmq1 mod q */
+  dmq1 = &local_dmq1;
+  BN_with_flags(dmq1, rsa->dmq1, BN_FLG_CONSTTIME);
+  if (!rsa->meth->bn_mod_exp(m1, r1, dmq1, rsa->q, ctx, rsa->_method_mod_q)) {
+    goto err;
+  }
+
+  /* compute I mod p */
+  c = &local_c;
+  BN_with_flags(c, I, BN_FLG_CONSTTIME);
+  if (!BN_mod(r1, c, rsa->p, ctx)) {
+    goto err;
+  }
+
+  /* compute r1^dmp1 mod p */
+  dmp1 = &local_dmp1;
+  BN_with_flags(dmp1, rsa->dmp1, BN_FLG_CONSTTIME);
+  if (!rsa->meth->bn_mod_exp(r0, r1, dmp1, rsa->p, ctx, rsa->_method_mod_p)) {
+    goto err;
+  }
+
+  if (!BN_sub(r0, r0, m1)) {
+    goto err;
+  }
+  /* This will help stop the size of r0 increasing, which does
+   * affect the multiply if it optimised for a power of 2 size */
+  if (BN_is_negative(r0)) {
+    if (!BN_add(r0, r0, rsa->p)) {
+      goto err;
+    }
+  }
+
+  if (!BN_mul(r1, r0, rsa->iqmp, ctx)) {
+    goto err;
+  }
+
+  /* Turn BN_FLG_CONSTTIME flag on before division operation */
+  pr1 = &local_r1;
+  BN_with_flags(pr1, r1, BN_FLG_CONSTTIME);
+
+  if (!BN_mod(r0, pr1, rsa->p, ctx)) {
+    goto err;
+  }
+
+  /* If p < q it is occasionally possible for the correction of
+   * adding 'p' if r0 is negative above to leave the result still
+   * negative. This can break the private key operations: the following
+   * second correction should *always* correct this rare occurrence.
+   * This will *never* happen with OpenSSL generated keys because
+   * they ensure p > q [steve] */
+  if (BN_is_negative(r0)) {
+    if (!BN_add(r0, r0, rsa->p)) {
+      goto err;
+    }
+  }
+  if (!BN_mul(r1, r0, rsa->q, ctx)) {
+    goto err;
+  }
+  if (!BN_add(r0, r1, m1)) {
+    goto err;
+  }
+
+  for (i = 0; i < num_additional_primes; i++) {
+    /* multi-prime RSA. */
+    BIGNUM local_exp, local_prime;
+    BIGNUM *exp = &local_exp, *prime = &local_prime;
+    RSA_additional_prime *ap =
+        sk_RSA_additional_prime_value(rsa->additional_primes, i);
+
+    BN_with_flags(exp, ap->exp, BN_FLG_CONSTTIME);
+    BN_with_flags(prime, ap->prime, BN_FLG_CONSTTIME);
+
+    /* c will already point to a BIGNUM with the correct flags. */
+    if (!BN_mod(r1, c, prime, ctx)) {
+      goto err;
+    }
+
+    if ((rsa->flags & RSA_FLAG_CACHE_PRIVATE) &&
+        !BN_MONT_CTX_set_locked(&ap->method_mod, &rsa->lock, prime, ctx)) {
+      goto err;
+    }
+
+    if (!rsa->meth->bn_mod_exp(m1, r1, exp, prime, ctx, ap->method_mod)) {
+      goto err;
+    }
+
+    BN_set_flags(m1, BN_FLG_CONSTTIME);
+
+    if (!BN_sub(m1, m1, r0) ||
+        !BN_mul(m1, m1, ap->coeff, ctx) ||
+        !BN_mod(m1, m1, prime, ctx) ||
+        (BN_is_negative(m1) && !BN_add(m1, m1, prime)) ||
+        !BN_mul(m1, m1, ap->r, ctx) ||
+        !BN_add(r0, r0, m1)) {
+      goto err;
+    }
+  }
+
+  if (rsa->e && rsa->n) {
+    if (!rsa->meth->bn_mod_exp(vrfy, r0, rsa->e, rsa->n, ctx,
+                               rsa->_method_mod_n)) {
+      goto err;
+    }
+    /* If 'I' was greater than (or equal to) rsa->n, the operation
+     * will be equivalent to using 'I mod n'. However, the result of
+     * the verify will *always* be less than 'n' so we don't check
+     * for absolute equality, just congruency. */
+    if (!BN_sub(vrfy, vrfy, I)) {
+      goto err;
+    }
+    if (!BN_mod(vrfy, vrfy, rsa->n, ctx)) {
+      goto err;
+    }
+    if (BN_is_negative(vrfy)) {
+      if (!BN_add(vrfy, vrfy, rsa->n)) {
+        goto err;
+      }
+    }
+    if (!BN_is_zero(vrfy)) {
+      /* 'I' and 'vrfy' aren't congruent mod n. Don't leak
+       * miscalculated CRT output, just do a raw (slower)
+       * mod_exp and return that instead. */
+
+      BIGNUM local_d;
+      BIGNUM *d = NULL;
+
+      d = &local_d;
+      BN_with_flags(d, rsa->d, BN_FLG_CONSTTIME);
+      if (!rsa->meth->bn_mod_exp(r0, I, d, rsa->n, ctx, rsa->_method_mod_n)) {
+        goto err;
+      }
+    }
+  }
+  ret = 1;
+
+err:
+  BN_CTX_end(ctx);
   return ret;
 }
 
@@ -232,15 +432,15 @@ const struct rsa_meth_st my_rsa_meth = {
   NULL /* sign */,
   NULL /* verify */,
 
-  encrypt,
+  my_encrypt /*encrypt*/,
   NULL /*sign_raw*/,
   my_decrypt,
   NULL /*verify_raw*/,
 
   NULL /*private_transform*/,
 
-  NULL /* mod_exp */,
-  NULL /* bn_mod_exp */,
+  mod_exp /* mod_exp */,
+  BN_mod_exp_mont /* bn_mod_exp */,
 
   RSA_FLAG_CACHE_PUBLIC | RSA_FLAG_CACHE_PRIVATE,
 
