@@ -1,0 +1,18 @@
+syntax = "proto3";
+message tls_message {
+    int32  version  = 1;
+    int32  id       = 2;
+    string private_key  = 3;
+    string encryt_txt   = 4;
+}
+
+message rsa_req {
+    int32   id = 1;
+    int32   version = 2;
+    int32   type    = 3;
+    string  public_key  = 4;
+    string  private_key = 5;
+    string  encrypt_txt = 6;
+    string  decrypt_txt = 7;
+}
+

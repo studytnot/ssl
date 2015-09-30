@@ -1,0 +1,63 @@
+MCP = ../../../../mcp_v7
+BIN = l7_master_mcp
+CC=g++ -g -Wall -O0
+LIB += -Wl,-Bstatic -lprotobuf -lcurl -Wl,-Bdynamic -ldl -lpthread -lz -lrt -lidn -lcrypt
+
+##################################
+L7PUBLIC = ../../public
+
+JSONINC = $(L7PUBLIC)/jsoncpp-src-0.5.0/include
+JSONSRC = $(L7PUBLIC)/jsoncpp-src-0.5.0/src/lib_json
+
+RAPIDXML_INC = $(L7PUBLIC)/rapidxml
+PROTOINC = $(L7PUBLIC)/protobuf
+PROTOSRC = $(L7PUBLIC)/protobuf
+
+##################################
+include $(MCP)/smcp/src/makefile.inc
+##################################
+MY_OBJ = \
+$(MCP)/public/FastTimer.o\
+$(JSONSRC)/json_reader.o\
+$(JSONSRC)/json_writer.o\
+$(JSONSRC)/json_value.o\
+$(L7PUBLIC)/HttpClient.o \
+$(PROTOSRC)/common.pb.o \
+$(PROTOSRC)/master.pb.o \
+$(PROTOSRC)/conf_agent.pb.o \
+MasterBase.o \
+DbAdm.o \
+MainSoWork.o \
+AuxSoWork.o \
+TaskManager.o\
+SetAdm.o \
+VsvcAdm.o \
+LdAdm.o \
+HbAdm.o \
+CfgCompareAdm.o \
+CfgFileAdm.o 
+
+
+##################################
+INC += -I$(JSONINC)
+INC += -I$(RAPIDXML_INC)
+INC += -I$(L7PUBLIC) 
+INC += -I$(PROTOINC) 
+##################################
+OBJ += $(MY_OBJ)
+
+all: $(BIN)
+
+$(BIN): ${OBJ}
+	rm -f $@
+	$(CC) -o $@ $(INC) $^ $(LIB) 
+	cp $(BIN) ../bin/
+
+%.o: %.cpp
+	$(CC) $(INC) -c -o $@ $<
+
+clean:
+	rm -f *.o ${BIN} ${MY_OBJ}
+
+cleanall:
+	rm -f *.o ${BIN} ${OBJ}	

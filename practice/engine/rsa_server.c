@@ -45,20 +45,28 @@ int main()
 
     printf("suc to read:%d bytes\n", sum);
     int k_len = 0;
-    sscanf(recv_buf, "%d", &k_len);
+    sscanf(recv_buf, "%4d", &k_len);
     printf("suc to read len:%d bytes\n", k_len);
 
-    const unsigned char *p = recv_buf;
+    const unsigned char *p = &recv_buf[4];
     int keylen;
-    k = d2i_RSAPrivateKey(NULL, &p, sum);
+
+    k = d2i_RSAPrivateKey(NULL, &p, k_len);
     if (k == NULL) {
          printf("fail to d2i rsa private key\n");
          return -1;
     }
 
+    unsigned char *crypt_txt = &recv_buf[4 + k_len];
+    int crypt_len = sum - 4 - k_len;
+    unsigned char decrypt[2048] = {0};
+    int decrypt_len = RSA_private_decrypt(crypt_len ,crypt_txt, decrypt, k, RSA_PKCS1_OAEP_PADDING);
+    printf("suc to decrypt:%s\n", decrypt);
+
+
     print_hex(recv_buf, sum);
 
-    printf("rsa private key len:%d key:%s\n", sum, recv_buf);
+    printf("rsa private key len:%d key:%s\n", k_len, recv_buf);
 
     return 0;
 }

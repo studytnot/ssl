@@ -46,7 +46,7 @@ int main()
 
 
     printf("key_len:%d private key:%s\n", key_len, key_buf);
-    sprintf(buf, "%d", key_len);
+    sprintf(buf, "%4d", key_len);
     memcpy(&buf[sizeof(int)], key_buf, key_len);
     memcpy(&buf[sizeof(int) + key_len], encrypt_txt, en_len);
     int len = sizeof(int) + key_len + en_len;
