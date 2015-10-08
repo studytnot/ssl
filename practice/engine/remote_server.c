@@ -9,6 +9,7 @@
 #include <openssl/bn.h>
 
 #include "common.h"
+#include "tls_message.pb-c.h"
 
 
 
@@ -39,14 +40,18 @@ int main()
 
         n = read(conn_fd, recv_buf, 2048);
         sum += n;
-        if  (sum >= 50)
+        if  (sum >= 10)
             break;
     }
 
     printf("suc to read:%d bytes\n", sum);
+    void *buf = malloc(sum);
+    RsaDecReq *req = NULL;
+    if ((req = rsa_dec_req__unpack(NULL, sum, buf)) == NULL) {
+        printf("fail to unpack rsa_dec_req\n");
+    }
+    printf("req id:%d req padding:%d max out:%d\n", req->id, req->padding, req->max_out);
     int k_len = 0;
-    sscanf(recv_buf, "%4d", &k_len);
-    printf("suc to read len:%d bytes\n", k_len);
 
     const unsigned char *p = &recv_buf[4];
     int keylen;
