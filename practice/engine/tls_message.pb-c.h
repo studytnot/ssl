@@ -16,7 +16,7 @@ PROTOBUF_C__BEGIN_DECLS
 
 
 typedef struct _TlsMessage TlsMessage;
-typedef struct _RsaReq RsaReq;
+typedef struct _RsaDecReq RsaDecReq;
 
 
 /* --- enums --- */
@@ -39,7 +39,7 @@ struct  _TlsMessage
     , 0,0, 0,0, NULL, NULL }
 
 
-struct  _RsaReq
+struct  _RsaDecReq
 {
   ProtobufCMessage base;
   protobuf_c_boolean has_id;
@@ -48,14 +48,22 @@ struct  _RsaReq
   int32_t version;
   protobuf_c_boolean has_type;
   int32_t type;
+  protobuf_c_boolean has_out_len;
+  int32_t out_len;
+  protobuf_c_boolean has_in_len;
+  int32_t in_len;
+  protobuf_c_boolean has_max_out;
+  int32_t max_out;
+  protobuf_c_boolean has_padding;
+  int32_t padding;
   char *public_key;
   char *private_key;
   char *encrypt_txt;
   char *decrypt_txt;
 };
-#define RSA_REQ__INIT \
- { PROTOBUF_C_MESSAGE_INIT (&rsa_req__descriptor) \
-    , 0,0, 0,0, 0,0, NULL, NULL, NULL, NULL }
+#define RSA_DEC_REQ__INIT \
+ { PROTOBUF_C_MESSAGE_INIT (&rsa_dec_req__descriptor) \
+    , 0,0, 0,0, 0,0, 0,0, 0,0, 0,0, 0,0, NULL, NULL, NULL, NULL }
 
 
 /* TlsMessage methods */
@@ -77,32 +85,32 @@ TlsMessage *
 void   tls_message__free_unpacked
                      (TlsMessage *message,
                       ProtobufCAllocator *allocator);
-/* RsaReq methods */
-void   rsa_req__init
-                     (RsaReq         *message);
-size_t rsa_req__get_packed_size
-                     (const RsaReq   *message);
-size_t rsa_req__pack
-                     (const RsaReq   *message,
+/* RsaDecReq methods */
+void   rsa_dec_req__init
+                     (RsaDecReq         *message);
+size_t rsa_dec_req__get_packed_size
+                     (const RsaDecReq   *message);
+size_t rsa_dec_req__pack
+                     (const RsaDecReq   *message,
                       uint8_t             *out);
-size_t rsa_req__pack_to_buffer
-                     (const RsaReq   *message,
+size_t rsa_dec_req__pack_to_buffer
+                     (const RsaDecReq   *message,
                       ProtobufCBuffer     *buffer);
-RsaReq *
-       rsa_req__unpack
+RsaDecReq *
+       rsa_dec_req__unpack
                      (ProtobufCAllocator  *allocator,
                       size_t               len,
                       const uint8_t       *data);
-void   rsa_req__free_unpacked
-                     (RsaReq *message,
+void   rsa_dec_req__free_unpacked
+                     (RsaDecReq *message,
                       ProtobufCAllocator *allocator);
 /* --- per-message closures --- */
 
 typedef void (*TlsMessage_Closure)
                  (const TlsMessage *message,
                   void *closure_data);
-typedef void (*RsaReq_Closure)
-                 (const RsaReq *message,
+typedef void (*RsaDecReq_Closure)
+                 (const RsaDecReq *message,
                   void *closure_data);
 
 /* --- services --- */
@@ -111,7 +119,7 @@ typedef void (*RsaReq_Closure)
 /* --- descriptors --- */
 
 extern const ProtobufCMessageDescriptor tls_message__descriptor;
-extern const ProtobufCMessageDescriptor rsa_req__descriptor;
+extern const ProtobufCMessageDescriptor rsa_dec_req__descriptor;
 
 PROTOBUF_C__END_DECLS
 

@@ -50,47 +50,47 @@ void   tls_message__free_unpacked
   assert(message->base.descriptor == &tls_message__descriptor);
   protobuf_c_message_free_unpacked ((ProtobufCMessage*)message, allocator);
 }
-void   rsa_req__init
-                     (RsaReq         *message)
+void   rsa_dec_req__init
+                     (RsaDecReq         *message)
 {
-  static RsaReq init_value = RSA_REQ__INIT;
+  static RsaDecReq init_value = RSA_DEC_REQ__INIT;
   *message = init_value;
 }
-size_t rsa_req__get_packed_size
-                     (const RsaReq *message)
+size_t rsa_dec_req__get_packed_size
+                     (const RsaDecReq *message)
 {
-  assert(message->base.descriptor == &rsa_req__descriptor);
+  assert(message->base.descriptor == &rsa_dec_req__descriptor);
   return protobuf_c_message_get_packed_size ((const ProtobufCMessage*)(message));
 }
-size_t rsa_req__pack
-                     (const RsaReq *message,
+size_t rsa_dec_req__pack
+                     (const RsaDecReq *message,
                       uint8_t       *out)
 {
-  assert(message->base.descriptor == &rsa_req__descriptor);
+  assert(message->base.descriptor == &rsa_dec_req__descriptor);
   return protobuf_c_message_pack ((const ProtobufCMessage*)message, out);
 }
-size_t rsa_req__pack_to_buffer
-                     (const RsaReq *message,
+size_t rsa_dec_req__pack_to_buffer
+                     (const RsaDecReq *message,
                       ProtobufCBuffer *buffer)
 {
-  assert(message->base.descriptor == &rsa_req__descriptor);
+  assert(message->base.descriptor == &rsa_dec_req__descriptor);
   return protobuf_c_message_pack_to_buffer ((const ProtobufCMessage*)message, buffer);
 }
-RsaReq *
-       rsa_req__unpack
+RsaDecReq *
+       rsa_dec_req__unpack
                      (ProtobufCAllocator  *allocator,
                       size_t               len,
                       const uint8_t       *data)
 {
-  return (RsaReq *)
-     protobuf_c_message_unpack (&rsa_req__descriptor,
+  return (RsaDecReq *)
+     protobuf_c_message_unpack (&rsa_dec_req__descriptor,
                                 allocator, len, data);
 }
-void   rsa_req__free_unpacked
-                     (RsaReq *message,
+void   rsa_dec_req__free_unpacked
+                     (RsaDecReq *message,
                       ProtobufCAllocator *allocator)
 {
-  assert(message->base.descriptor == &rsa_req__descriptor);
+  assert(message->base.descriptor == &rsa_dec_req__descriptor);
   protobuf_c_message_free_unpacked ((ProtobufCMessage*)message, allocator);
 }
 static const ProtobufCFieldDescriptor tls_message__field_descriptors[4] =
@@ -170,15 +170,15 @@ const ProtobufCMessageDescriptor tls_message__descriptor =
   (ProtobufCMessageInit) tls_message__init,
   NULL,NULL,NULL    /* reserved[123] */
 };
-static const ProtobufCFieldDescriptor rsa_req__field_descriptors[7] =
+static const ProtobufCFieldDescriptor rsa_dec_req__field_descriptors[11] =
 {
   {
     "id",
     1,
     PROTOBUF_C_LABEL_OPTIONAL,
     PROTOBUF_C_TYPE_INT32,
-    offsetof(RsaReq, has_id),
-    offsetof(RsaReq, id),
+    offsetof(RsaDecReq, has_id),
+    offsetof(RsaDecReq, id),
     NULL,
     NULL,
     0,             /* flags */
@@ -189,8 +189,8 @@ static const ProtobufCFieldDescriptor rsa_req__field_descriptors[7] =
     2,
     PROTOBUF_C_LABEL_OPTIONAL,
     PROTOBUF_C_TYPE_INT32,
-    offsetof(RsaReq, has_version),
-    offsetof(RsaReq, version),
+    offsetof(RsaDecReq, has_version),
+    offsetof(RsaDecReq, version),
     NULL,
     NULL,
     0,             /* flags */
@@ -201,8 +201,56 @@ static const ProtobufCFieldDescriptor rsa_req__field_descriptors[7] =
     3,
     PROTOBUF_C_LABEL_OPTIONAL,
     PROTOBUF_C_TYPE_INT32,
-    offsetof(RsaReq, has_type),
-    offsetof(RsaReq, type),
+    offsetof(RsaDecReq, has_type),
+    offsetof(RsaDecReq, type),
+    NULL,
+    NULL,
+    0,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+  {
+    "out_len",
+    4,
+    PROTOBUF_C_LABEL_OPTIONAL,
+    PROTOBUF_C_TYPE_INT32,
+    offsetof(RsaDecReq, has_out_len),
+    offsetof(RsaDecReq, out_len),
+    NULL,
+    NULL,
+    0,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+  {
+    "in_len",
+    5,
+    PROTOBUF_C_LABEL_OPTIONAL,
+    PROTOBUF_C_TYPE_INT32,
+    offsetof(RsaDecReq, has_in_len),
+    offsetof(RsaDecReq, in_len),
+    NULL,
+    NULL,
+    0,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+  {
+    "max_out",
+    6,
+    PROTOBUF_C_LABEL_OPTIONAL,
+    PROTOBUF_C_TYPE_INT32,
+    offsetof(RsaDecReq, has_max_out),
+    offsetof(RsaDecReq, max_out),
+    NULL,
+    NULL,
+    0,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+  {
+    "padding",
+    7,
+    PROTOBUF_C_LABEL_OPTIONAL,
+    PROTOBUF_C_TYPE_INT32,
+    offsetof(RsaDecReq, has_padding),
+    offsetof(RsaDecReq, padding),
     NULL,
     NULL,
     0,             /* flags */
@@ -210,11 +258,11 @@ static const ProtobufCFieldDescriptor rsa_req__field_descriptors[7] =
   },
   {
     "public_key",
-    4,
+    10,
     PROTOBUF_C_LABEL_OPTIONAL,
     PROTOBUF_C_TYPE_STRING,
     0,   /* quantifier_offset */
-    offsetof(RsaReq, public_key),
+    offsetof(RsaDecReq, public_key),
     NULL,
     NULL,
     0,             /* flags */
@@ -222,11 +270,11 @@ static const ProtobufCFieldDescriptor rsa_req__field_descriptors[7] =
   },
   {
     "private_key",
-    5,
+    11,
     PROTOBUF_C_LABEL_OPTIONAL,
     PROTOBUF_C_TYPE_STRING,
     0,   /* quantifier_offset */
-    offsetof(RsaReq, private_key),
+    offsetof(RsaDecReq, private_key),
     NULL,
     NULL,
     0,             /* flags */
@@ -234,11 +282,11 @@ static const ProtobufCFieldDescriptor rsa_req__field_descriptors[7] =
   },
   {
     "encrypt_txt",
-    6,
+    12,
     PROTOBUF_C_LABEL_OPTIONAL,
     PROTOBUF_C_TYPE_STRING,
     0,   /* quantifier_offset */
-    offsetof(RsaReq, encrypt_txt),
+    offsetof(RsaDecReq, encrypt_txt),
     NULL,
     NULL,
     0,             /* flags */
@@ -246,43 +294,48 @@ static const ProtobufCFieldDescriptor rsa_req__field_descriptors[7] =
   },
   {
     "decrypt_txt",
-    7,
+    13,
     PROTOBUF_C_LABEL_OPTIONAL,
     PROTOBUF_C_TYPE_STRING,
     0,   /* quantifier_offset */
-    offsetof(RsaReq, decrypt_txt),
+    offsetof(RsaDecReq, decrypt_txt),
     NULL,
     NULL,
     0,             /* flags */
     0,NULL,NULL    /* reserved1,reserved2, etc */
   },
 };
-static const unsigned rsa_req__field_indices_by_name[] = {
-  6,   /* field[6] = decrypt_txt */
-  5,   /* field[5] = encrypt_txt */
+static const unsigned rsa_dec_req__field_indices_by_name[] = {
+  10,   /* field[10] = decrypt_txt */
+  9,   /* field[9] = encrypt_txt */
   0,   /* field[0] = id */
-  4,   /* field[4] = private_key */
-  3,   /* field[3] = public_key */
+  4,   /* field[4] = in_len */
+  5,   /* field[5] = max_out */
+  3,   /* field[3] = out_len */
+  6,   /* field[6] = padding */
+  8,   /* field[8] = private_key */
+  7,   /* field[7] = public_key */
   2,   /* field[2] = type */
   1,   /* field[1] = version */
 };
-static const ProtobufCIntRange rsa_req__number_ranges[1 + 1] =
+static const ProtobufCIntRange rsa_dec_req__number_ranges[2 + 1] =
 {
   { 1, 0 },
-  { 0, 7 }
+  { 10, 7 },
+  { 0, 11 }
 };
-const ProtobufCMessageDescriptor rsa_req__descriptor =
+const ProtobufCMessageDescriptor rsa_dec_req__descriptor =
 {
   PROTOBUF_C__MESSAGE_DESCRIPTOR_MAGIC,
-  "rsa_req",
-  "RsaReq",
-  "RsaReq",
+  "rsa_dec_req",
+  "RsaDecReq",
+  "RsaDecReq",
   "",
-  sizeof(RsaReq),
-  7,
-  rsa_req__field_descriptors,
-  rsa_req__field_indices_by_name,
-  1,  rsa_req__number_ranges,
-  (ProtobufCMessageInit) rsa_req__init,
+  sizeof(RsaDecReq),
+  11,
+  rsa_dec_req__field_descriptors,
+  rsa_dec_req__field_indices_by_name,
+  2,  rsa_dec_req__number_ranges,
+  (ProtobufCMessageInit) rsa_dec_req__init,
   NULL,NULL,NULL    /* reserved[123] */
 };

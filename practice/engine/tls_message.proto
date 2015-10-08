@@ -6,13 +6,17 @@ message tls_message {
     string encryt_txt   = 4;
 }
 
-message rsa_req {
+message rsa_dec_req {
     int32   id = 1;
     int32   version = 2;
     int32   type    = 3;
-    string  public_key  = 4;
-    string  private_key = 5;
-    string  encrypt_txt = 6;
-    string  decrypt_txt = 7;
+    int32   out_len = 4;
+    int32   in_len  = 5;
+    int32   max_out = 6;
+    int32   padding = 7;
+    string  public_key  = 10;
+    string  private_key = 11;
+    string  encrypt_txt = 12;
+    string  decrypt_txt = 13;
 }
 
