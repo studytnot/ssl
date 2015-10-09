@@ -199,20 +199,42 @@ static int my_decrypt(RSA *rsa, size_t *out_len, uint8_t *out, size_t max_out,
   }
 
   RsaDecReq req = RSA_DEC_REQ__INIT;
+  req.has_id = 1;
+  req.id        = 18;
+  req.version   = 2;
+  req.has_version = 1;
   req.max_out   = 13;
+  req.has_max_out = 1;
   req.out_len   = *out_len;
+  req.has_out_len = 1;
   req.padding   = 11;
-  //unsigned char *key_buf = NULL;
-  int key_len  =  i2d_RSAPrivateKey(rsa, (uint8_t **) &req.private_key);
-    //memcpy(unsi, key_buf, key_len);
-  printf("i2d_rsaprivatekey len:%d max_out:%d padding:%d\n", key_len, req.max_out, req.padding);
+  req.has_padding = 1;
+  unsigned char *key_buf = NULL;
+  printf("hi, file:%s line:%d\n", __FILE__, __LINE__);
+  int key_len  =  i2d_RSAPrivateKey(rsa, (uint8_t **) &key_buf);
+  printf("hi, file:%s line:%d\n", __FILE__, __LINE__);
+  req.private_key.data = (uint8_t *)malloc(key_len);
+  req.private_key.len  = key_len;
+  memcpy(req.private_key.data, key_buf, key_len);
+  printf("memcpy to req.private_key, key_len:%d\n", key_len);
+  printf("i2d_rsaprivatekey len:%d max_out:%d padding:%d id:%d\n", key_len, req.max_out, req.padding, req.id);
+  printf("key buf:\n");
+  req.private_key_len = key_len;
+  req.has_private_key_len = 1;
+  print_hex(key_buf, key_len);
+  printf("private key\n");
+  print_hex(req.private_key.data, key_len);
+  req.has_private_key = 1;
   req.encrypt_txt = (uint8_t *)malloc(in_len);
   if (NULL == req.encrypt_txt) {
        printf("fail to malloc ofr crypt_msg\n");
        return -1;
   }
+  printf("hi, private key len:%d file:%s line:%d\n", req.private_key_len,  __FILE__, __LINE__);
 
   strncpy(req.encrypt_txt, in, in_len);
+  printf("encrypt txt:\n");
+  print_hex(req.encrypt_txt, in_len);
 
   int pack_size = rsa_dec_req__get_packed_size(&req);
   printf("packed size:%d\n", pack_size);
@@ -220,6 +242,17 @@ static int my_decrypt(RSA *rsa, size_t *out_len, uint8_t *out, size_t max_out,
   rsa_dec_req__pack(&req, pb_buf);
 
   send_pb(pb_buf, pack_size);
+
+  sleep(1);
+  printf("hi file:%s line:%d\n", __FILE__, __LINE__);
+  RsaDecReq *re = rsa_dec_req__unpack(NULL, pack_size, pb_buf);
+  printf("hi file:%s line:%d\n", __FILE__, __LINE__);
+  if (re->private_key.data == NULL) {
+      printf("fail to get private data\n");
+      return -1;
+  }
+  print_hex(re->private_key.data, key_len);
+  printf("hi file:%s line:%d\n", __FILE__, __LINE__);
 
   if (padding == RSA_NO_PADDING) {
     buf = out;

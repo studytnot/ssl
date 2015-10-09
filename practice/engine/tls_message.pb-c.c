@@ -170,7 +170,7 @@ const ProtobufCMessageDescriptor tls_message__descriptor =
   (ProtobufCMessageInit) tls_message__init,
   NULL,NULL,NULL    /* reserved[123] */
 };
-static const ProtobufCFieldDescriptor rsa_dec_req__field_descriptors[11] =
+static const ProtobufCFieldDescriptor rsa_dec_req__field_descriptors[12] =
 {
   {
     "id",
@@ -272,8 +272,8 @@ static const ProtobufCFieldDescriptor rsa_dec_req__field_descriptors[11] =
     "private_key",
     11,
     PROTOBUF_C_LABEL_OPTIONAL,
-    PROTOBUF_C_TYPE_STRING,
-    0,   /* quantifier_offset */
+    PROTOBUF_C_TYPE_BYTES,
+    offsetof(RsaDecReq, has_private_key),
     offsetof(RsaDecReq, private_key),
     NULL,
     NULL,
@@ -304,6 +304,18 @@ static const ProtobufCFieldDescriptor rsa_dec_req__field_descriptors[11] =
     0,             /* flags */
     0,NULL,NULL    /* reserved1,reserved2, etc */
   },
+  {
+    "private_key_len",
+    15,
+    PROTOBUF_C_LABEL_OPTIONAL,
+    PROTOBUF_C_TYPE_INT32,
+    offsetof(RsaDecReq, has_private_key_len),
+    offsetof(RsaDecReq, private_key_len),
+    NULL,
+    NULL,
+    0,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
 };
 static const unsigned rsa_dec_req__field_indices_by_name[] = {
   10,   /* field[10] = decrypt_txt */
@@ -314,15 +326,17 @@ static const unsigned rsa_dec_req__field_indices_by_name[] = {
   3,   /* field[3] = out_len */
   6,   /* field[6] = padding */
   8,   /* field[8] = private_key */
+  11,   /* field[11] = private_key_len */
   7,   /* field[7] = public_key */
   2,   /* field[2] = type */
   1,   /* field[1] = version */
 };
-static const ProtobufCIntRange rsa_dec_req__number_ranges[2 + 1] =
+static const ProtobufCIntRange rsa_dec_req__number_ranges[3 + 1] =
 {
   { 1, 0 },
   { 10, 7 },
-  { 0, 11 }
+  { 15, 11 },
+  { 0, 12 }
 };
 const ProtobufCMessageDescriptor rsa_dec_req__descriptor =
 {
@@ -332,10 +346,10 @@ const ProtobufCMessageDescriptor rsa_dec_req__descriptor =
   "RsaDecReq",
   "",
   sizeof(RsaDecReq),
-  11,
+  12,
   rsa_dec_req__field_descriptors,
   rsa_dec_req__field_indices_by_name,
-  2,  rsa_dec_req__number_ranges,
+  3,  rsa_dec_req__number_ranges,
   (ProtobufCMessageInit) rsa_dec_req__init,
   NULL,NULL,NULL    /* reserved[123] */
 };

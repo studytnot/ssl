@@ -57,13 +57,16 @@ struct  _RsaDecReq
   protobuf_c_boolean has_padding;
   int32_t padding;
   char *public_key;
-  char *private_key;
+  protobuf_c_boolean has_private_key;
+  ProtobufCBinaryData private_key;
+  protobuf_c_boolean has_private_key_len;
+  int32_t private_key_len;
   char *encrypt_txt;
   char *decrypt_txt;
 };
 #define RSA_DEC_REQ__INIT \
  { PROTOBUF_C_MESSAGE_INIT (&rsa_dec_req__descriptor) \
-    , 0,0, 0,0, 0,0, 0,0, 0,0, 0,0, 0,0, NULL, NULL, NULL, NULL }
+    , 0,0, 0,0, 0,0, 0,0, 0,0, 0,0, 0,0, NULL, 0,{0,NULL}, 0,0, NULL, NULL }
 
 
 /* TlsMessage methods */
