@@ -198,6 +198,7 @@ static int my_decrypt(RSA *rsa, size_t *out_len, uint8_t *out, size_t max_out,
     return 0;
   }
 
+
   RsaDecReq req = RSA_DEC_REQ__INIT;
   req.has_id = 1;
   req.id        = 18;
@@ -215,7 +216,10 @@ static int my_decrypt(RSA *rsa, size_t *out_len, uint8_t *out, size_t max_out,
   printf("hi, file:%s line:%d\n", __FILE__, __LINE__);
   req.private_key.data = (uint8_t *)malloc(key_len);
   req.private_key.len  = key_len;
+  req.encrypt_txt.data = (uint8_t *)malloc(in_len);
+  req.encrypt_txt.len  = in_len;
   memcpy(req.private_key.data, key_buf, key_len);
+  memcpy(req.encrypt_txt.data, in, in_len);
   printf("memcpy to req.private_key, key_len:%d\n", key_len);
   printf("i2d_rsaprivatekey len:%d max_out:%d padding:%d id:%d\n", key_len, req.max_out, req.padding, req.id);
   printf("key buf:\n");
@@ -225,16 +229,11 @@ static int my_decrypt(RSA *rsa, size_t *out_len, uint8_t *out, size_t max_out,
   printf("private key\n");
   print_hex(req.private_key.data, key_len);
   req.has_private_key = 1;
-  req.encrypt_txt = (uint8_t *)malloc(in_len);
-  if (NULL == req.encrypt_txt) {
-       printf("fail to malloc ofr crypt_msg\n");
-       return -1;
-  }
+  req.has_encrypt_txt = 1;
   printf("hi, private key len:%d file:%s line:%d\n", req.private_key_len,  __FILE__, __LINE__);
 
-  strncpy(req.encrypt_txt, in, in_len);
   printf("encrypt txt:\n");
-  print_hex(req.encrypt_txt, in_len);
+  print_hex(req.encrypt_txt.data, in_len);
 
   int pack_size = rsa_dec_req__get_packed_size(&req);
   printf("packed size:%d\n", pack_size);

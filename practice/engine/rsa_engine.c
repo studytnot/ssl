@@ -48,7 +48,7 @@ int main(int argc, char** argv) {
     }
 
     BIGNUM  *bn_e = BN_new();
-    int     bits  = 1024;
+    int     bits  = 2048;
     unsigned long  e = RSA_F4;
     BN_set_word(bn_e, e);
     int ret = RSA_generate_key_ex(rsa, bits, bn_e, NULL);

@@ -260,8 +260,8 @@ static const ProtobufCFieldDescriptor rsa_dec_req__field_descriptors[12] =
     "public_key",
     10,
     PROTOBUF_C_LABEL_OPTIONAL,
-    PROTOBUF_C_TYPE_STRING,
-    0,   /* quantifier_offset */
+    PROTOBUF_C_TYPE_BYTES,
+    offsetof(RsaDecReq, has_public_key),
     offsetof(RsaDecReq, public_key),
     NULL,
     NULL,
@@ -284,8 +284,8 @@ static const ProtobufCFieldDescriptor rsa_dec_req__field_descriptors[12] =
     "encrypt_txt",
     12,
     PROTOBUF_C_LABEL_OPTIONAL,
-    PROTOBUF_C_TYPE_STRING,
-    0,   /* quantifier_offset */
+    PROTOBUF_C_TYPE_BYTES,
+    offsetof(RsaDecReq, has_encrypt_txt),
     offsetof(RsaDecReq, encrypt_txt),
     NULL,
     NULL,
@@ -296,8 +296,8 @@ static const ProtobufCFieldDescriptor rsa_dec_req__field_descriptors[12] =
     "decrypt_txt",
     13,
     PROTOBUF_C_LABEL_OPTIONAL,
-    PROTOBUF_C_TYPE_STRING,
-    0,   /* quantifier_offset */
+    PROTOBUF_C_TYPE_BYTES,
+    offsetof(RsaDecReq, has_decrypt_txt),
     offsetof(RsaDecReq, decrypt_txt),
     NULL,
     NULL,

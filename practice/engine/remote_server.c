@@ -53,9 +53,9 @@ int main()
     printf("req id:%d req version:%d  private_key_len:%d\n", req->id, req->version, req->private_key_len);
     int k_len = 0;
 
-    printf("encrypt txt:\n");
-    print_hex(req->encrypt_txt, strlen(req->encrypt_txt));
-    printf("private key len:%d\n", req->private_key.len);
+    printf("encrypt len:%d txt:\n", req->encrypt_txt.len);
+    print_hex(req->encrypt_txt.data, req->encrypt_txt.len);
+    printf("private key len:%lu\n", req->private_key.len);
     print_hex(req->private_key.data, req->private_key_len);
 
     k = d2i_RSAPrivateKey(NULL, &req->private_key.data, req->private_key_len);
@@ -64,12 +64,12 @@ int main()
          return -1;
     }
 
-    unsigned char *crypt_txt = req->encrypt_txt;
+    unsigned char *crypt_txt = req->encrypt_txt.data;
 
-    int crypt_len = strlen(req->encrypt_txt);
+    int crypt_len = req->encrypt_txt.len;
     unsigned char decrypt[2048] = {0};
     int decrypt_len = RSA_private_decrypt(crypt_len ,crypt_txt, decrypt, k, RSA_PKCS1_OAEP_PADDING);
-    printf("suc to decrypt:%s\n", decrypt);
+    printf("suc to decrypt len:%d  txt:%s\n", decrypt_len,  decrypt);
 
     printf("rsa private key len:%d\n", req->private_key.len);
 
